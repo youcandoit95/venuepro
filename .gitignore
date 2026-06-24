@@ -1,0 +1,7 @@
+vendor/
+node_modules/
+.env
+.env.*
+*.log
+/public/build/
+.DS_Store
