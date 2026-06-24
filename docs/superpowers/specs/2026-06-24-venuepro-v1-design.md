@@ -1,10 +1,12 @@
-# VenuePro (venuepro.asia) — v1 Design Spec (v1.2, panel-hardened)
+# VenuePro (venuepro.asia) — v1 Design Spec (v1.3, latest-stack)
 
 **Date:** 2026-06-24 (rev 2026-06-25)
 **Status:** Draft for review
 **Supersedes:** the initial v1 draft (1% split commission + VPR/Open Match in v1). This revision incorporates a 6-lens expert critique and the owner's final business decisions.
 
-**v1.2 changelog (expert-panel cross-feedback round):** a second multi-lens panel (SEO · PWA→native packaging · performance · application-security/OWASP · UX · UI design-system) reviewed v1.1, gave each other peer feedback, and resolved cross-lens tensions. Result: Lighthouse target raised **98 → ≥99 per-route**; SEO/AEO, PWA-to-mobile-app readiness, OWASP security controls, UX principles, and a design-system token contract are now first-class (§7). Resolved tradeoffs are recorded in **Appendix A**.
+**v1.2 changelog (expert-panel cross-feedback round):** a second multi-lens panel (SEO · PWA→native packaging · performance · application-security/OWASP · UX · UI design-system) reviewed v1.1, gave each other peer feedback, and resolved cross-lens tensions. Result: Lighthouse target raised **98 → ≥99 per-route**; SEO/AEO, PWA-to-mobile-app readiness, OWASP security controls, UX principles, and a design-system token contract are now first-class (§7). Resolved tradeoffs are recorded in **Appendix A**. Also added: §2.1 competitive positioning vs **Reclub & AYO**; CSP relaxed to an **allowlist**; **Privacy Policy + Terms** pages and **account deletion ("Hapus akun")** in v1 scope.
+
+**v1.3 changelog (latest-stack refresh):** every stack component verified latest-stable (live, 2026-06) and pinned in **§4.1**. Headline bumps: **Laravel 12→13**, **Livewire 3→4** (built-in CSP-safe mode), **PostgreSQL → 18.4 / PostGIS 3.6**, **Redis 8.8** (kept per owner; Valkey 9.1 noted as a permissive drop-in), **Vite 8 / Node 24 / Pest 4 / Capacitor 8 / MapLibre 5 / Intervention v4**. PHP stays `^8.4`.
 
 > **Headline model change:** VenuePro is a **pure SaaS** for court businesses, monetised by **prepaid credits**. The **venue is the merchant of record** — booking money flows **100% to the venue's own Xendit account**; **the platform never holds, aggregates, or splits booking funds**. This eliminates payment-custody/PJP licensing exposure and keeps the platform out of marketplace tax-collection (PMK 37/2025). v1 ships the booking + operations core; **player rating (VPR) and Open Match move to v1.5**.
 
@@ -90,13 +92,47 @@ Two incumbents Indonesian players already use, occupying **different** halves of
 
 ## 4. Architecture
 
-- **Laravel 12 · PHP 8.4.** **Blade (SSR public) + Livewire 3 + Alpine + Tailwind** (dashboard/admin). Server-rendered, minimal JS → the lowest-risk path to **Lighthouse ≥98 + SEO + offline**.
-- **PostgreSQL** + **PostGIS** (radius search) + full-text search. Extensions: `btree_gist` (no-overlap constraint).
-- **Redis**: cache (hot availability), queues (notifications, webhooks side-effects), sessions, and a **fast-fail UX lock** for booking (not the integrity guarantee).
+- **Laravel 13 · PHP 8.4.** **Blade (SSR public) + Livewire 4 + Alpine 3 (+`@alpinejs/csp`) + Tailwind v4** (dashboard/admin). Server-rendered, minimal JS → the lowest-risk path to **Lighthouse ≥99 + SEO + offline**. Versions verified latest-stable as of 2026-06 (full pin table in **§4.1**). Laravel 13 (GA Mar 2026) is the greenfield major; **Livewire 4** is chosen specifically for its **built-in CSP-safe mode (`csp_safe=true`)** — the cleanest way to satisfy the hard no-`unsafe-eval`/`unsafe-inline` `script-src` on the booking/payments surface. PHP pinned `^8.4` (8.4 active-support baseline; allow `^8.4 || ^8.5` and migrate to 8.5 once tooling is green).
+- **PostgreSQL 18** + **PostGIS 3.6** (radius search) + full-text search. Extensions: `btree_gist` (no-overlap constraint). **Keep the explicit partial `EXCLUDE USING gist (... WHERE status IN (...))`** — it is more expressive than PG18's new `WITHOUT OVERLAPS` (which can't carry a status predicate).
+- **Redis 8.8**: cache (hot availability), queues (notifications, webhooks side-effects), sessions, and a **fast-fail UX lock** for booking (not the integrity guarantee). Password-protected, not network-exposed; `REDIS_CLIENT=phpredis`. _(Licensing note: VenuePro only **uses** stock Redis as an unmodified backing service — Redis 8's AGPLv3 option does not reach VenuePro's application code. **Valkey 9.1** (BSD-3-Clause) is a wire-compatible drop-in if a fully-permissive backend is ever preferred — no Laravel config change.)_
 - **Payments: Xendit xenPlatform** — managed sub-accounts (venue = sub-account, owns funds), charges (QRIS/e-wallet/VA), webhooks. Platform credit wallet billed separately.
 - **Notifications:** WhatsApp Business API (provider TBD at impl) + email fallback; queued.
 - **Multi-tenancy (corrected):** **do NOT global-scope public read models** (discovery queries across all venues). Tenant-scope **only the dashboard surface**, binding the active venue **from the route** (not an implicit global scope). Platform-admin access via `Gate::before`, not `withoutGlobalScopes`. `venue_id` denormalised onto bookings for cheap scoping + constraints. **Isolation tests required.**
-- **Build:** Vite; **all CSS/JS/fonts/images self-hosted/local — zero external CDN.**
+- **Build:** **Vite 8** (via `laravel-vite-plugin ^3.1`, which forces Vite ^8 — single Rust Rolldown bundler) on **Node 24 LTS**; **all CSS/JS/fonts/images self-hosted/local** (allowlisted externals only, per §7.4).
+
+### 4.1 Pinned tech stack (verified latest-stable, 2026-06)
+
+> All-latest-stable per the owner. Use caret constraints so non-breaking minors flow in; lock majors. Risk notes call out any brand-new major to avoid.
+
+| Layer | Component | Pin | Notes |
+|---|---|---|---|
+| Runtime | PHP | `^8.4` (`\|\| ^8.5` ok) | 8.4 active-support baseline; 8.5 GA (8.5.7) optional-forward once tooling green. No PHP 9. |
+| Framework | Laravel | `^13.0` | GA 17 Mar 2026. Greenfield major; do NOT start on 12. CSRF reworked → `PreventRequestForgery`. Needs PHP ≥8.3. MIT. |
+| UI runtime | Livewire | `^4.3` | GA Jan 2026. **Built-in CSP-safe mode** (`csp_safe=true`) → load-bearing for our CSP. SFC + Islands. MIT. |
+| UI | Livewire Volt | `^1.10` | spans LW3.6.1\|4.0. MIT. |
+| UI kit | Flux UI | `^2.15` | supports LW3.5.19+/LW4; needs Tailwind v4. **Freemium** — Pro components need a paid license (keep token out of repo). |
+| JS | Alpine.js + `@alpinejs/csp` | both `^3.15` | co-version the two; still v3. CSP build needs `Alpine.data()` (no inline expressions). MIT. |
+| CSS | Tailwind CSS | `^4.3` + `@tailwindcss/vite ^4.3` | spec's v4 correct: `@theme`, OKLCH, `@custom-variant`. No v5. MIT. |
+| DB | PostgreSQL | `18.4` | mature 18.x; native temporal constraints. NOT PG19 (beta). Fallback 17.10. Checksums-on-by-default at initdb. |
+| DB ext | PostGIS | `3.6.3` | supports PG18. Runs as separate process (GPLv2+ doesn't reach app). |
+| DB ext | `btree_gist` | in-core (PG18) | keep explicit partial `EXCLUDE`; needs `CREATE EXTENSION btree_gist`. |
+| Cache/queue | **Redis** | `8.8` (`REDIS_CLIENT=phpredis`) | latest stable (GA May 2026). Use-as-service → AGPLv3 doesn't reach app code. Valkey 9.1 = BSD drop-in alt. |
+| Perf (opt) | Laravel Octane + FrankenPHP | `^2.17` + FrankenPHP `1.12.4`+ | **optional, load-test first.** FrankenPHP MUST be ≥1.12.x (CVE-2026-45062 + worker-session-leak fixes). `--max-requests` to recycle. |
+| Bundler | Vite + laravel-vite-plugin | `^8.1` + `^3.1` | plugin forces Vite 8 (Rolldown). MIT. |
+| JS runtime | Node.js | `24` LTS | NOT 26 (non-LTS). engines floor ≥22.12. |
+| Test | Pest (+ PHPUnit) | `^4.7` (PHPUnit `12.5.x` transitive) | Pest 4 owns the PHPUnit constraint — do NOT add `phpunit ^13` (hard conflict). Native browser tests + parallel. |
+| Authz | spatie/laravel-permission | `^8.0` | new major May 2026; Laravel 12\|13, PHP ^8.3. MIT. |
+| API auth | laravel/sanctum | `^4.3` | backs the iOS bundled-app Bearer JSON API. MIT. |
+| Payments | xendit/xendit-php | `^7.0` | xenPlatform; fall back to direct REST for any product the SDK lacks. Public-domain. |
+| Images | intervention/image (+ `-laravel`) | `^4.1` (+ `^1.5`) | **v4** (spec's "v3?" was stale); v4 API differs — write v4-style. PHP ^8.3. |
+| Media | spatie/laravel-medialibrary | `^11.23` | Laravel 10–13. Align its Intervention major with the above. MIT. |
+| Map | MapLibre GL JS / pmtiles / @protomaps/basemaps | `^5.24` / `^4.4` / `^5.7` (tile schema **v4**) | NOT MapLibre v6 (pre-release). Self-host a **snapshotted dated v4 PMTiles** build; **must show "© OpenStreetMap contributors" (ODbL share-alike).** |
+| Mobile | Capacitor (all `@capacitor/*`) | `8.4.1` | NOT C9 (alpha). C8 forces Android edge-to-edge → wire safe-area + 44pt to the System Bars plugin. iOS min 15, Android minSdk 24, Xcode 26+. |
+| Mobile OTA | `@capgo/capacitor-updater` | `8.49.7` | Capacitor-8 track; hosted delivery is paid SaaS (or self-host). |
+| Android TWA | `@bubblewrap/cli` | `1.24.1` | slow-maintained; JDK 17. `assetlinks.json` from a non-SW-cached route, array of SHA-256 (upload + Play App Signing). |
+| Fonts | `@fontsource-variable/plus-jakarta-sans` | `5.2.8` (or vendor woff2) | variable wght axis confirmed; OFL-1.1. Vendoring makes it build-time-only. |
+| SW | Workbox (`workbox-*`) | `7.4.1` | keep all `workbox-*` in lockstep. No v8. MIT. |
+| Push | minishlink/web-push (PHP) / web-push (Node) | `^10.1` / `3.6.7` | PHP lib jumped to **v10** (Dec 2025) — read migration notes; VAPID keys unaffected. |
 
 ---
 
@@ -180,7 +216,7 @@ Venue buys a `credit_package` → pays the **platform** (this IS platform revenu
 ### 7.4 Security & OWASP controls
 - **Webhook is the only money mutator — unforgeable, idempotent, replay-proof, tenant-bound.** Verify Xendit `x-callback-token` via `hash_equals` (constant-time). **Critical:** the token is a *static shared* token, not a per-message HMAC — so additionally re-fetch/assert the payment by `provider_ref` **and** match the event's sub-account/`business_id` to the booking's `venue_id` (reject mismatch). `INSERT event_id` into `webhook_events` (UNIQUE) **before** side-effects. Enforce the allowed-transition matrix via conditional `UPDATE ... WHERE status='hold' AND hold_expires_at > now()` (0 rows = late/dup). Re-validate `amount_idr` + currency against the stored total (blocks amount-tampering). Route is CSRF-exempt but **IP-allowlisted to Xendit ranges**, no auth session, fast 200 + queued side-effects. Credit deduction and any venue refund happen **only** inside this verified idempotent path.
 - **xenPlatform `for-user-id` confused-deputy control (top money-IDOR).** The platform master key can act on **any** sub-account via `for-user-id`. Centralize **all** Xendit calls in one gateway service that derives `for-user-id` strictly from the **route-bound authorized `venue_id`** (never request input), asserting the target sub-account belongs to the acting tenant before any charge/refund. Refunds are policy-authorized, **OTP/re-auth-gated**, idempotent (keyed by booking), with the refund % **server-computed** from the `CancellationPolicy` (player cannot influence) and their own audit row; alert on abnormal refund volume per venue.
-- **Allowlist-based CSP** via shared middleware (pragmatic, not absolutist). The **one hard line** stays: `script-src` has **no `unsafe-inline`, no `unsafe-eval`** (`'self' 'nonce-{n}' 'strict-dynamic'`; Livewire 3 CSP-safe build + `@alpinejs/csp`; public pages use a **static hash-based** `script-src`, cacheable). Beyond that, CSP is an **allowlist**: self-host by default, but where an asset/service genuinely cannot be self-hosted, add its **specific origin** to the relevant directive — **named host, never wildcard `*`**, each entry recorded with a reason in a central `config/csp.php` allowlist (single source of truth, reviewed in PRs). `style-src 'self' 'nonce-{n}'` on the inline critical-CSS block; components toggle token **classes**, never inline `:style`. Base directives: `default-src 'self'`; `img-src 'self' data:`; `base-uri`/`form-action 'self'`; `frame-ancestors 'none'`; `object-src 'none'`; `upgrade-insecure-requests`; Trusted Types where supported.
+- **Allowlist-based CSP** via shared middleware (pragmatic, not absolutist). The **one hard line** stays: `script-src` has **no `unsafe-inline`, no `unsafe-eval`** (`'self' 'nonce-{n}' 'strict-dynamic'`; **Livewire 4 CSP-safe mode `csp_safe=true`** which auto-switches Alpine to its `@alpinejs/csp` build; public pages use a **static hash-based** `script-src`, cacheable). Beyond that, CSP is an **allowlist**: self-host by default, but where an asset/service genuinely cannot be self-hosted, add its **specific origin** to the relevant directive — **named host, never wildcard `*`**, each entry recorded with a reason in a central `config/csp.php` allowlist (single source of truth, reviewed in PRs). `style-src 'self' 'nonce-{n}'` on the inline critical-CSS block; components toggle token **classes**, never inline `:style`. Base directives: `default-src 'self'`; `img-src 'self' data:`; `base-uri`/`form-action 'self'`; `frame-ancestors 'none'`; `object-src 'none'`; `upgrade-insecure-requests`; Trusted Types where supported.
 - **Documented external allowlist (the only permitted non-`self` origins; off the public critical path).** `connect-src`/`script-src`: **Xendit** (`https://*.xendit.co` checkout/SDK + return), **Capacitor** (`capacitor://localhost`) + the **TWA host**; **bot-challenge** (Cloudflare Turnstile / hCaptcha) only on auth/OTP/booking POST endpoints (noindex, off the LCP path); **map tiles** are self-hosted PMTiles by default, but if a hosted tile/style provider is ever needed it is added here as a named `img-src`/`connect-src` origin behind the click-to-load facade. **WhatsApp/FCM/APNs/VAPID** are server-side (no browser origin). Anything not on this list is blocked; adding to it requires the documented reason + "can't be self-hosted" justification + a Lighthouse/critical-path check.
 - **OTP / WhatsApp abuse — SMS-pumping, brute-force, enumeration.** Composite-key limiters — `otp-send` `perMinute(1)->by(phone)` AND daily cap (~5/day/phone) AND per-IP (~10/hr) AND per-subnet — with exponential cooldowns; a **channel-cost circuit breaker** (hard daily WA send budget + spend alerts, auto-throttle on spikes). OTPs 6-digit, **HMAC-hashed**, single-use, 5-min TTL, max 5 verify attempts then invalidate (Redis keyed by E.164-normalized phone so `08…`/`+62…` can't bypass). **Constant-time, identical responses** for existing/non-existing accounts. CAPTCHA/Turnstile after threshold, on the POST endpoint only — never on the SSR/LCP path. Re-issue session ID on login; OTP re-challenge for refund execution, credit top-up, phone change.
 - **Multi-tenancy / IDOR.** Bind active venue from the **route** (never `venue_id` from request body); Policies on bookings/payments/credits/refunds/reviews/settings checking `$user->venue_id === $model->venue_id`; `Gate::before` grants platform_admin **only**; resolve children via parent (`$venue->bookings()->findOrFail($id)`). In Livewire mark ownership props `#[Locked]` and re-authorize inside every action. **Blocking Pest isolation suite:** staff of Venue A get 403/404 on every Venue B resource and money action.
@@ -228,7 +264,7 @@ Venue buys a `credit_package` → pays the **platform** (this IS platform revenu
 1. Identity, roles & account lifecycle (OTP, policies, route-bound venue scope, **account deletion/anonymization + Privacy Policy/Terms pages**).
 2. Venue & courts (CRUD, hours + overrides, pricing, blocks, geo).
 3. Discovery (public SSR, search, schema.org, map facade).
-4. Availability & booking (slot/buffer/band-aware pricing, EXCLUDE constraint + Redis, walk-in).
+4. Availability & booking (slot/buffer/band-aware pricing, EXCLUDE constraint + Redis 8.8 UX lock, walk-in).
 5. Payments (Xendit xenPlatform sub-accounts, webhook idempotency) — venue merchant-of-record.
 6. Credits (wallet, top-up, per-booking deduction, packages).
 7. Cancellation/refund (policy engine, venue-executed refunds, hard disclosures).
@@ -249,7 +285,7 @@ Venue buys a `credit_package` → pays the **platform** (this IS platform revenu
 
 ## 10. Repo & Setup (first implementation step)
 
-- Scaffold **Laravel 12** (Livewire 3, Tailwind, Pest, `spatie/laravel-permission`, **Xendit SDK (xenPlatform)**, PostGIS-enabled migrations, `btree_gist`). Local Postgres + Redis (Redis needs a password) already running.
+- Scaffold **Laravel 13** (PHP `^8.4`) with **Livewire 4** (`csp_safe=true`), **Tailwind v4**, **Pest 4**, `spatie/laravel-permission ^8`, `laravel/sanctum ^4.3`, **Xendit SDK `^7` (xenPlatform)**, `intervention/image ^4` + `spatie/laravel-medialibrary ^11`, PostGIS-enabled migrations + `btree_gist`. Frontend: **Vite 8** + `laravel-vite-plugin ^3.1` on **Node 24 LTS**. Local **PostgreSQL 18.4** + **Redis 8.8** (password-protected) running. (Full pins: §4.1.)
 - **Repo:** SaaS lives at `/Volumes/data/venuepro` (new). Decide at scaffold whether to use the existing `youcandoit95/venuepro` GitHub repo (and move the KORTA padel PWA to `demo/` or its own repo) or a fresh repo. Default: fresh repo for the SaaS; KORTA stays as-is.
 - Env: Xendit keys + sub-account onboarding; WA provider keys; `venuepro.asia`.
 

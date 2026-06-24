@@ -7,7 +7,7 @@ metadata:
   originSessionId: 0adddf45-9fb2-448a-8466-0f2f35efa1bb
 ---
 
-**VenuePro** (venuepro.asia) = court-booking SaaS for Indonesia, Jakarta-first, padel + tennis. Stack: Laravel 12 + Blade (SSR public) / Livewire 3 / Alpine / Tailwind v4 + Postgres/PostGIS (btree_gist EXCLUDE no-overlap) + Redis + Xendit. Repo `/Volumes/data/venuepro` (git).
+**VenuePro** (venuepro.asia) = court-booking SaaS for Indonesia, Jakarta-first, padel + tennis. Stack (verified latest-stable 2026-06, pinned in spec §4.1): **Laravel 13** + Blade (SSR public) / **Livewire 4** (CSP-safe mode) / **Alpine 3** / **Tailwind v4** + **PostgreSQL 18.4** / **PostGIS 3.6** (btree_gist EXCLUDE no-overlap) + **Redis 8.8** (Valkey 9.1 = permissive drop-in alt) + Xendit `^7`. PHP `^8.4`, Vite 8, Node 24 LTS, Pest 4, Capacitor 8. Repo `/Volumes/data/venuepro` (git).
 
 **Load-bearing model decisions (locked):**
 - **Venue = merchant of record** via Xendit xenPlatform sub-accounts → 100% of booking money goes to the venue's own account; **platform NEVER holds/custodies booking funds** (avoids PJP/escrow + marketplace tax-collector exposure; platform stays non-PKP SaaS).
