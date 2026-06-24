@@ -34,38 +34,44 @@ A cinematic, single-page-immersive marketing + booking experience for **KLAY**, 
 
 ---
 
-## 3. Design System — "Earthy Premium Sport"
+## 3. Design System — "Clean Court" (White & Green Minimalist)
+
+Direction: **white-dominant, green-accented, generous whitespace.** Calm, airy, editorial — luxury through restraint and space, not decoration. Real Unsplash padel photography carries the warmth; UI stays quiet around it.
 
 ### 3.1 Color tokens
 | Token | Hex | Use |
 |---|---|---|
-| `sand` | `#F2EBDD` | Primary light background |
-| `bone` | `#E8DECF` | Secondary surfaces / cards |
-| `clay` | `#C8654A` | Primary brand accent (terracotta) |
-| `clay-deep` | `#A04B33` | Hover / pressed clay |
-| `olive` | `#2F3A2C` | Deep turf green, dark sections |
-| `espresso` | `#1E1915` | Near-black text / darkest sections |
-| `lime` | `#C7F04A` | "Court Lime" — energy accent, CTAs & live status (used sparingly) |
-| `muted` | `#7A7163` | Secondary text on light |
+| `paper` | `#FFFFFF` | Primary background (dominant) |
+| `mist` | `#F4F7F4` | Secondary surfaces / alternating sections |
+| `line` | `#E4EBE5` | Hairlines, borders, dividers |
+| `forest` | `#0E3B2A` | Headlines & dark sections (deep green near-black) |
+| `green` | `#1C7C54` | Primary brand green — links, key accents |
+| `green-soft` | `#3FA776` | Hover / secondary green |
+| `lime` | `#C6F24E` | Energy accent for the ONE primary CTA & "live" status (used very sparingly) |
+| `ink` | `#16241D` | Body text (green-tinted near-black) |
+| `muted` | `#6B7A70` | Secondary text |
 
-Texture layer: subtle film **grain/noise** overlay (SVG/feTurbulence, ~3–5% opacity) on hero + dark sections for an analog, expensive feel.
+Texture: **minimal.** Whitespace is the texture. At most a barely-there grain (≤2% opacity) on dark green sections; light sections stay clean. No heavy shadows — depth comes from hairlines (`line`) and spacing.
 
-### 3.2 Typography
-- **Display:** Fraunces (high-contrast serif, optical sizing) — headlines, hero.
+### 3.2 Imagery
+Real **Unsplash** padel/tennis photography, downloaded locally to `public/images/` (hero, courts, action, equipment detail, coach portraits, gallery). Treated consistently: natural color, optional subtle green-duotone only where needed for text legibility. Photos do the talking; chrome stays white.
+
+### 3.3 Typography
+- **Display:** Fraunces (high-contrast serif, optical sizing) — headlines, hero. Lighter weights on big sizes for an airy, editorial feel.
 - **Body/UI:** Geist Sans (fallback Inter) — paragraphs, buttons, nav.
 - **Mono/labels:** Geist Mono (fallback JetBrains Mono) — small caps labels, times, prices, scores, section indices ("01 — Courts").
 - Type scale: fluid `clamp()` based; hero display up to ~12vw, generous line-height control, tight tracking on display.
 
-### 3.3 Motion language
+### 3.4 Motion language
 - Smooth scroll via **Lenis**.
 - Scroll-driven reveals & pinning via **GSAP ScrollTrigger**; component micro-interactions via **Framer Motion**.
 - Easing: slow, weighted (custom cubic-bezier ~ `[0.16, 1, 0.3, 1]`). Word-by-word headline reveals. Parallax in layers.
 - **Hard rule:** every animation gated behind `prefers-reduced-motion`; reduced-motion users get instant, non-jarring states.
 
-### 3.4 Layout primitives
+### 3.5 Layout primitives
 - Asymmetric editorial grid (12-col with intentional off-grid moments).
-- Generous negative space on light sections; dense, cinematic dark sections.
-- Section index labels (mono) + oversized section titles (serif).
+- **Generous negative space everywhere** (whitespace-forward); a few deep-green sections for rhythm/contrast.
+- Section index labels (mono) + oversized section titles (serif). Hairline dividers over boxes/shadows.
 
 ---
 
