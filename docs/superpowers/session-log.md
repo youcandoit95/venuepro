@@ -4,6 +4,7 @@ Running log of completed tasks (newest first). Updated after each task per the s
 (memory + session + index). Memory lives at `~/.claude/projects/-Volumes-data/memory/`.
 
 ## 2026-06-25
+- **"Grapify" code/knowledge index + memory moved into repo.** `scripts/reindex.sh` (POSIX grep, no rg dependency) generates `docs/superpowers/INDEX.md` (heading map now; PHP/JS symbols once scaffolded; optional `.tags` via universal-ctags). Memory migrated from `~/.claude/...` into the repo at `docs/superpowers/memory/` (sustains in git); `~/.claude` copy is now just a pointer. Habit: rebuild index + update memory + session after each task.
 - **CSP relaxed + Privacy/Hapus-Akun + Reclub wedge** → spec `f6e01b1`. CSP now allowlist-based (self-host default, whitelist named origins that can't be local; hard no `unsafe-inline`/`unsafe-eval` on script-src). Added Privacy Policy + Terms pages and self-service account deletion (UU PDP + Play/App Store req). Added §2.1 competitive positioning vs Reclub. Saved `docs/.../competitor-reclub.md`.
 - **Expert-panel cross-feedback round → spec v1.2** `e46ff56`. 6 lenses (SEO · PWA→native · perf · OWASP · UX · UI design-system) + cross-feedback + synthesis. Lighthouse raised 98→≥99 per-route; added §7.1–7.8 (incl. design-system tokens) + Appendix A (14 resolved tensions). Panel raw output: `docs/.../expert-panel-result.json`.
 - **Memory + session log set up.** Created MEMORY.md + user-profile, venuepro-project, venuepro-competitors, feedback-update-memory-session-index-after-task.
