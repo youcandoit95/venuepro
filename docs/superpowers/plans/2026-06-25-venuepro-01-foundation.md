@@ -651,6 +651,67 @@ git add -A && git commit -m "feat(foundation): health check + Plan 01 ship ritua
 
 ---
 
+## Task 8: KORTA template preview route (`/korta-template`)
+
+**Files:**
+- Modify: `routes/web.php` (serve the vendored KORTA static site)
+- Create: `tests/Feature/KortaTemplateTest.php`
+
+**Interfaces:**
+- Consumes: booting app (Task 1), `SecurityHeaders` middleware (Task 5)
+- Produces: a browsable preview of the KORTA padel template (vendored at `korta-template/site/`) at **`/korta-template`** — useful as a design reference; not part of the secure app surface
+
+- [ ] **Step 1: Write the failing preview test**
+
+```php
+<?php
+// tests/Feature/KortaTemplateTest.php
+it('serves the KORTA template index at /korta-template', function () {
+    $res = $this->get('/korta-template');
+    $res->assertOk();
+    expect($res->getContent())->toContain('KORTA');
+});
+
+it('serves a KORTA static asset without 404', function () {
+    $this->get('/korta-template/styles.css')->assertOk()
+        ->assertHeader('content-type', 'text/css; charset=UTF-8');
+})->skip(fn () => ! is_file(base_path('korta-template/site/styles.css')), 'asset path differs');
+```
+
+- [ ] **Step 2: Run it to verify it fails**
+
+Run: `./vendor/bin/pest --filter=KortaTemplateTest`
+Expected: FAIL — route not defined (404).
+
+- [ ] **Step 3: Add the static-serving route (path-traversal guarded, CSP-exempt for the demo)**
+
+```php
+// routes/web.php  — append
+use App\Http\Middleware\SecurityHeaders;
+
+Route::get('/korta-template/{path?}', function (string $path = 'index.html') {
+    $base = realpath(base_path('korta-template/site'));
+    $full = realpath($base.DIRECTORY_SEPARATOR.$path) ?: $base.'/index.html';
+    abort_unless($base && str_starts_with($full, $base) && is_file($full), 404);
+    return response()->file($full);
+})->where('path', '.*')->withoutMiddleware(SecurityHeaders::class);
+```
+
+(KORTA ships its own service worker + inline scripts, so the strict app CSP is intentionally skipped for this preview-only route. `realpath` + prefix check blocks path traversal. Bare `/korta-template` serves `index.html`; assets resolve under `/korta-template/...` so KORTA's relative URLs work.)
+
+- [ ] **Step 4: Run the test to verify it passes**
+
+Run: `./vendor/bin/pest --filter=KortaTemplateTest`
+Expected: PASS. Manual check: `php artisan serve` → open `http://127.0.0.1:8000/korta-template`.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add -A && git commit -m "feat(foundation): serve KORTA template preview at /korta-template"
+```
+
+---
+
 ## Self-Review (run before handoff)
 
 **Spec coverage (Plan 01 scope = spec §4 Architecture + §4.1 stack + §10 Repo & Setup):**
