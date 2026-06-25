@@ -2,6 +2,8 @@
 
 This is the durable, git-tracked memory for this project. `~/.claude/.../memory/MEMORY.md` is just a pointer here. Update these after each task (the standing habit).
 
+> **▶ RESUMING? READ `docs/superpowers/HANDOFF.md` FIRST** — current state, the immediate next action (execute Plan 01), and open questions.
+
 - [User profile](user-profile.md) — Indonesian sports-venue founder; Bahasa Indonesia; wants thorough multi-agent work
 - [Habit: update memory+session+index after each task](feedback-update-memory-session-index-after-task.md) — per-task ritual; "grapify" = local code/semantic index (`scripts/reindex.sh` → `docs/superpowers/INDEX.md`)
 - [Rule: .env + .env.example always in sync](feedback-env-credentials.md) — all creds in .env; add every new env key to .env.example (placeholder) in the same commit

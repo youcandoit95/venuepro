@@ -15,8 +15,8 @@ metadata:
 - Refunds executed by the venue per its own CancellationPolicy; hard, server-enforced disclosures on transaction pages.
 - v1 = booking + operations core. **VPR rating (margin-aware Elo+RD) + Open Match deferred to v1.5.**
 
-**Spec:** `docs/superpowers/specs/2026-06-24-venuepro-v1-design.md` (currently **v1.2, panel-hardened**). §7 covers the owner's six hard requirements: SEO/AEO, PWA→native (TWA + iOS Capacitor), **Lighthouse ≥99 per-route**, OWASP security, UX, design-system tokens. CSP is **allowlist-based** (self-host default; whitelist named origins that can't be local; hard no `unsafe-inline`/`unsafe-eval` on script-src). Privacy Policy + Terms pages and **self-service account deletion ("Hapus akun")** are in v1 scope (UU PDP + Play/App Store requirement).
+**Spec:** `docs/superpowers/specs/2026-06-24-venuepro-v1-design.md` (**v1.3, latest-stack — LOCKED**). §7 covers the owner's six hard requirements: SEO/AEO, PWA→native (TWA + iOS Capacitor), **Lighthouse ≥99 per-route**, OWASP security, UX, design-system tokens. CSP is **allowlist-based** (hard no `unsafe-inline`/`unsafe-eval` on script-src). Privacy/Terms pages + **account deletion ("Hapus akun")** in v1. Uploads **images only** (client-compressed); video disallowed.
 
-**Status:** brainstorming spec at the "user reviews spec → writing-plans" gate. Competitors analyzed: [[venuepro-competitors]].
+**Status (2026-06-25):** brainstorming DONE → writing-plans. **Roadmap (14 plans) + Plan 01 (Foundation) written; nothing executed yet (no Laravel app).** Repo pushed to github.com/youcandoit95/venuepro (VenuePro at root, KORTA in `korta-template/`). **▶ Next: execute Plan 01 — see `docs/superpowers/HANDOFF.md`.** Competitors: [[venuepro-competitors]]; backlog: [[competitive-backlog]]; rules: [[feedback-update-memory-session-index-after-task]], [[feedback-env-credentials]].
 
-Related KORTA padel PWA (separate, live) lives at `/Volumes/data/padel` (padel.myansenriadi.com).
+Related KORTA padel PWA also vendored at `korta-template/` (and live separately at `/Volumes/data/padel` → padel.myansenriadi.com).
